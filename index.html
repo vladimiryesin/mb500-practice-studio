@@ -227,12 +227,12 @@ function isComplete(item){return structured(item)?item.groups.every((g,i)=>Numbe
 function hasAnswer(item){return structured(item)?(item.responses||[]).some(v=>v!==null):item.selected.length>0;}
 function responseChoice(item,uid){return item.responseChoices.find(c=>c.uid===uid);}
 let armedChoice=null;
-function setResponse(groupId,value){
+function setResponse(groupId,value,render=true){
  const item=current();if(item.checked||state.session.finished||!structured(item))return;
  const group=item.groups[groupId];if(!group)return;
  const uid=value===null?null:Number(value);if(uid!==null&&(!Number.isInteger(uid)||!group.choiceIds.includes(uid)))return;
  if(item.type==='ordering'&&!item.allowReuse&&uid!==null)item.responses=item.responses.map((v,i)=>i!==groupId&&v===uid?null:v);
- item.responses[groupId]=uid;armedChoice=null;save();renderSession();
+ item.responses[groupId]=uid;armedChoice=null;save();if(render)renderSession();
 }
 function armChoice(uid){
  const item=current();if(item.checked||!responseChoice(item,uid))return;
@@ -288,7 +288,7 @@ function installResponseEvents(){
  });
  document.addEventListener('pointerup',e=>{const drag=pointerDrag;if(!drag||drag.id!==e.pointerId)return;const target=drag.active?dragTargetAt(e.clientX,e.clientY):null,active=drag.active,uid=drag.uid;clearPointerDrag();if(active){e.preventDefault();lastPlacementDrag=Date.now();if(target){setResponse(Number(target.dataset.dropTarget),uid);toast('Answer placed.');}}});
  document.addEventListener('pointercancel',clearPointerDrag);
- document.addEventListener('change',e=>{if(e.target.matches('[data-response-group]')){const index=Number(e.target.dataset.responseGroup);setResponse(index,e.target.value===''?null:Number(e.target.value));$('#main [data-response-group="'+index+'"]')?.focus();}});
+ document.addEventListener('change',e=>{if(e.target.matches('[data-response-group]')){const index=Number(e.target.dataset.responseGroup),item=current();setResponse(index,e.target.value===''?null:Number(e.target.value),item.type!=='dropdown');if(item.type==='dropdown'){const check=$('#main [data-action="check"]');if(check)check.disabled=!isComplete(item);const progress=$('.question-progress span:nth-child(2)');if(progress&&item.checked===false&&state.session.mode==='exam')progress.textContent=state.session.items.filter(isComplete).length+' answered';}}});
  document.addEventListener('dragstart',e=>{if(pointerDrag){e.preventDefault();return;}const chip=e.target.closest('[data-chip]');if(!chip||view!=='session'||current().checked)return;e.dataTransfer.setData('text/plain',chip.dataset.chip);e.dataTransfer.effectAllowed='copyMove';armedChoice=Number(chip.dataset.chip);chip.classList.add('dragging');});
  document.addEventListener('dragend',()=>{document.querySelectorAll('.dragging,.drag-over').forEach(el=>el.classList.remove('dragging','drag-over'));armedChoice=null;});
  document.addEventListener('dragover',e=>{const target=e.target.closest('[data-drop-target]');if(!target||view!=='session'||current().checked)return;e.preventDefault();e.dataTransfer.dropEffect='copy';target.classList.add('drag-over');});
