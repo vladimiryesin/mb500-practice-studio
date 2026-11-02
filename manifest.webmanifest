@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "MB-500 Learning Path",
+  "short_name": "MB-500",
+  "description": "Short, friendly practice sessions for the Dynamics 365 Finance and Operations Apps Developer exam.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f7f8f4",
+  "theme_color": "#285b47",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
