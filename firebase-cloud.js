@@ -94,6 +94,7 @@ if (ready) {
     unsubscribeProgress = null;
     activeProgressRef = null;
     window.practiceCloudUser = user ? { uid: user.uid, email: user.email || '' } : null;
+    if (user) window.practiceSelectCloudOwner?.(user.uid);
     window.dispatchEvent(new Event('practice-auth-state'));
     if (!user) {
       cloudStatus('local');
