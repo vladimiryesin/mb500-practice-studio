@@ -119,8 +119,11 @@ dialog{border:1px solid #d9e2d1;border-radius:18px;padding:30px;max-width:440px;
  .answer-text{font-size:16px;line-height:1.55}
  .answer{min-height:58px;padding:15px;border-radius:13px}
  .answer-marker{height:30px;min-width:30px;font-size:13px}
- .session-top,.question-nav{gap:12px}
+ .session-top{gap:12px}
+ .question-nav{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:20px 0 24px;padding-bottom:18px}
+ .question-nav .keyboard-hint{display:none}
  .session-top .button,.question-nav .button{min-height:48px;font-size:15px;padding:12px 14px}
+ .question-nav .button{width:100%;min-width:0;min-height:56px;justify-content:center;padding:12px 8px;gap:7px;font-size:15px;white-space:nowrap}
  .explanation-text{font-size:15px;line-height:1.7}
  .response-field label,.response-field select{font-size:15px}
  .drag-chip,.target-button{font-size:15px;line-height:1.6}
