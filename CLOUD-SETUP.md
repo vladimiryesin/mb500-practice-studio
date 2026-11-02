@@ -6,7 +6,7 @@ The saved progress includes question history, accuracy, bookmarks, daily practic
 
 ## Install on Android
 
-Open the GitHub Pages address in Chrome, then choose **⋮ → Add to Home screen** (or **Install app**). Open the installed app and sign in with Google. Sign in with the same account on the website and other devices to share progress.
+Open the GitHub Pages address in Chrome, then choose **⋮ → Add to Home screen** (or **Install app**). Open the installed app and use the Google sign-in window. Sign in with the same account on the website and other devices to share progress.
 
 ## Firebase maintenance
 

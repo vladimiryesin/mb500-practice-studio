@@ -3,9 +3,7 @@ import {
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
-  getRedirectResult,
   signInWithPopup,
-  signInWithRedirect,
   signOut
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
 import {
@@ -70,11 +68,10 @@ if (ready) {
 
   window.practiceCloudSignIn = async () => {
     try {
-      if (matchMedia('(display-mode: standalone)').matches) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        await signInWithPopup(auth, provider);
-      }
+      // The app is hosted on GitHub Pages, while Firebase Auth's helper is on
+      // firebaseapp.com. Redirect sign-in can lose its auth state in browsers
+      // that partition third-party storage; popup sign-in avoids that flow.
+      await signInWithPopup(auth, provider);
     } catch (error) {
       cloudStatus('error', error);
       throw error;
@@ -87,13 +84,16 @@ if (ready) {
     window.dispatchEvent(new CustomEvent('practice-cloud-status', { detail: { status, error: error?.message || '' } }));
   }
 
-  getRedirectResult(auth).catch(error => cloudStatus('error', error));
-
   onAuthStateChanged(auth, async user => {
     unsubscribeProgress?.();
     unsubscribeProgress = null;
     activeProgressRef = null;
-    window.practiceCloudUser = user ? { uid: user.uid, email: user.email || '' } : null;
+    window.practiceCloudUser = user ? {
+      uid: user.uid,
+      email: user.email || '',
+      displayName: user.displayName || '',
+      photoURL: user.photoURL || ''
+    } : null;
     if (user) window.practiceSelectCloudOwner?.(user.uid);
     window.dispatchEvent(new Event('practice-auth-state'));
     if (!user) {
