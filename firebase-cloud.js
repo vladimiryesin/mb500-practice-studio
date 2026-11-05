@@ -11,7 +11,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  onSnapshot,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
 import { firebaseConfig } from './firebase-config.js';
@@ -33,8 +32,6 @@ if (ready) {
     localStorage.setItem(deviceKey, deviceId);
   }
 
-  let unsubscribeProgress = null;
-  let pendingWrite = null;
   let activeProgressRef = null;
   let lastRemoteJson = '';
 
@@ -42,29 +39,27 @@ if (ready) {
     return JSON.stringify(state || {});
   }
 
-  function scheduleWrite() {
+  async function saveProgress() {
     if (!auth.currentUser || !activeProgressRef) return;
-    clearTimeout(pendingWrite);
-    pendingWrite = setTimeout(async () => {
-      const current = window.practiceGetState?.();
-      if (!current || !auth.currentUser || !activeProgressRef) return;
-      const payload = stateJson(current);
-      if (payload === lastRemoteJson) return;
-      try {
-        await setDoc(activeProgressRef, {
-          state: current,
-          writer: deviceId,
-          updatedAt: serverTimestamp()
-        });
-        lastRemoteJson = payload;
-        cloudStatus('synced');
-      } catch (error) {
-        cloudStatus('error', error);
-      }
-    }, 700);
+    const current = window.practiceGetState?.();
+    if (!current) return;
+    const payload = stateJson(current);
+    if (payload === lastRemoteJson) return;
+    try {
+      await setDoc(activeProgressRef, {
+        state: current,
+        writer: deviceId,
+        updatedAt: serverTimestamp()
+      });
+      lastRemoteJson = payload;
+      cloudStatus('saved');
+    } catch (error) {
+      cloudStatus('error', error);
+    }
   }
 
-  window.addEventListener('practice-state-change', scheduleWrite);
+  // Cloud writes happen only after explicit Next or Previous button clicks.
+  window.addEventListener('practice-cloud-save-requested', saveProgress);
 
   window.practiceCloudSignIn = async () => {
     try {
@@ -78,15 +73,12 @@ if (ready) {
     }
   };
   window.practiceCloudSignOut = () => signOut(auth);
-  window.addEventListener('online', () => scheduleWrite());
 
   function cloudStatus(status, error) {
     window.dispatchEvent(new CustomEvent('practice-cloud-status', { detail: { status, error: error?.message || '' } }));
   }
 
   onAuthStateChanged(auth, async user => {
-    unsubscribeProgress?.();
-    unsubscribeProgress = null;
     activeProgressRef = null;
     window.practiceCloudUser = user ? {
       uid: user.uid,
@@ -111,26 +103,10 @@ if (ready) {
         const remote = data.state || {};
         lastRemoteJson = stateJson(remote);
         window.practiceApplyRemote?.(remote, true);
-        const merged = window.practiceGetState?.() || {};
-        if (stateJson(merged) !== lastRemoteJson) scheduleWrite();
       } else {
         lastRemoteJson = '';
-        if (Object.keys(local).length) scheduleWrite();
       }
-      unsubscribeProgress = onSnapshot(activeProgressRef, snapshotUpdate => {
-        if (!snapshotUpdate.exists()) return;
-        const data = snapshotUpdate.data();
-        if (data.writer === deviceId) return;
-        const remote = data.state || {};
-        const remoteJson = stateJson(remote);
-        if (remoteJson === lastRemoteJson) return;
-        lastRemoteJson = remoteJson;
-        window.practiceApplyRemote?.(remote);
-        const merged = window.practiceGetState?.() || {};
-        if (stateJson(merged) !== remoteJson) scheduleWrite();
-        cloudStatus('synced');
-      }, error => cloudStatus('error', error));
-      cloudStatus('synced');
+      cloudStatus('ready');
     } catch (error) {
       cloudStatus('error', error);
     }
@@ -141,7 +117,8 @@ window.addEventListener('practice-cloud-status', event => {
   const status = event.detail?.status;
   const label = document.querySelector('#cloud-status');
   if (!label || !window.practiceCloudUser) return;
-  if (status === 'loading') label.textContent = 'Syncing progress…';
-  else if (status === 'synced') label.textContent = 'Progress synced';
-  else if (status === 'error') label.textContent = 'Cloud sync paused';
+  if (status === 'loading') label.textContent = 'Checking cloud backup…';
+  else if (status === 'ready') label.textContent = 'Cloud backup ready';
+  else if (status === 'saved') label.textContent = 'Cloud backup saved';
+  else if (status === 'error') label.textContent = 'Cloud backup failed';
 });
