@@ -270,7 +270,7 @@ function solutionPreview(v){
 }
 function upgradeSession(){
  const session=state.session;if(!session?.items)return;
- for(const item of session.items){if(structured(item))continue;const q=qById(item.id);const v=q?.variants.find(v=>['dropdown','ordering'].includes(v.type));if(!v)continue;
+ for(const item of session.items){item.stem=cleanQuestionStem(item.stem);if(structured(item))continue;const q=qById(item.id);const v=q?.variants.find(v=>['dropdown','ordering'].includes(v.type));if(!v)continue;
   const upgraded=createItem(q,v);upgraded.responses=upgraded.groups.map(g=>{const prefix=norm(g.label).replace(/:$/,'')+': ';const old=(item.options||[]).find(o=>(item.selected||[]).includes(o.uid)&&norm(o.text).startsWith(prefix));if(!old)return null;const label=norm(old.text).slice(prefix.length);return upgraded.responseChoices.find(c=>norm(c.text)===label)?.uid??null;});
   Object.assign(item,{type:upgraded.type,groups:upgraded.groups,responseChoices:upgraded.responseChoices,responses:upgraded.responses,allowReuse:upgraded.allowReuse});
  }
