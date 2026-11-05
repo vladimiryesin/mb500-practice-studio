@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mb500-learning-path-v2';
+const CACHE_NAME = 'mb500-learning-path-v3';
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
