@@ -216,9 +216,10 @@ function renderHome(){
 }
 function structured(item){return Array.isArray(item.groups)&&item.groups.length>0;}
 function matchesFormat(q,format){return format==='all'||q.variants.some(v=>(v.type||'choice')===format||(format==='choice'&&!['dropdown','ordering'].includes(v.type)));}
+function cleanQuestionStem(value){return String(value??'').replace(/^\s*\d{1,3}\s*\.\s*(?:\r?\n)+/,'').replace(/^\s*\.\s+/,'').trim();}
 function mergePublishedBank(seed,saved){
  const merged=new Map(seed.map(q=>[norm(q.stem),q]));
- for(const q of Array.isArray(saved)?saved:[]){const key=norm(q.stem),published=merged.get(key);if(!published){merged.set(key,q);continue;}if(!published.variants.some(v=>['dropdown','ordering'].includes(v.type)))merged.set(key,{...q,id:published.id});}
+ for(const q of Array.isArray(saved)?saved:[]){const stem=cleanQuestionStem(q.stem),key=norm(stem),published=merged.get(key);if(!published){merged.set(key,{...q,stem});continue;}if(!published.variants.some(v=>['dropdown','ordering'].includes(v.type)))merged.set(key,{...q,id:published.id,stem});}
  return [...merged.values()];
 }
 function createItem(q,v){
@@ -343,7 +344,7 @@ function importBank(raw){
  const questions=[],stems=new Set();
  for(const [id,q] of Object.entries(raw.bank)){
   if(!q||typeof q.question!=='string'||!Array.isArray(q.variants))continue;
-  const stem=norm(q.question.replace(/^\s*\d{1,3}\s*\.\s*(?:\r?\n)+/,''));if(!stem||stems.has(stem))continue;
+  const cleanStem=cleanQuestionStem(q.question),stem=norm(cleanStem);if(!stem||stems.has(stem))continue;
   const variants=[],seen=new Set();
   for(const v of q.variants){
    if(!Array.isArray(v.options)||typeof v.explanation!=='string')continue;
@@ -359,7 +360,7 @@ function importBank(raw){
    const sig=JSON.stringify({type,answers:options.map(o=>norm(o.text)+'|'+o.correct).sort()});if(seen.has(sig))continue;seen.add(sig);
    variants.push({options,type,response_groups:groups,explanation:v.explanation,references:Array.isArray(v.references)?v.references.filter(r=>r&&typeof r.url==='string'&&typeof r.title==='string'):[]});
   }
-  if(variants.length){stems.add(stem);questions.push({id,stem:q.question.replace(/^\s*\d{1,3}\s*\.\s*(?:\r?\n)+/,''),variants});}
+  if(variants.length){stems.add(stem);questions.push({id,stem:cleanStem,variants});}
  }
  if(!questions.length)throw Error('No usable questions found in this bank.');return questions;
 }
